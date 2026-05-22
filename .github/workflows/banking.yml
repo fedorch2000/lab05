@@ -12,6 +12,8 @@ jobs:
       uses: actions/checkout@master
     - name: Adding gtest to project
       run: git clone https://github.com/google/googletest.git third-party/gtest -b v1.17.0
+    - name: Install lcov to os
+      run: sudo apt-get install -y lcov
     - name: Config CMake for banking with tests
       run: cmake -H. -B ${{github.workspace}}/build -DBUILD_TESTS=ON
     - name: Build banking
@@ -19,3 +21,12 @@ jobs:
     - name: Run tests
       run: |
         build/check
+        cmake --build ${{github.workspace}}/build --target test -- ARGS=--verbose
+    - name: Run lcov
+      run: |
+        mkdir ${{github.workspace}}/coverage/
+        lcov -c -d ${{github.workspace}}/build/CMakeFiles/check.dir/tests/ --output-file ${{github.workspace}}/coverage/lcov.info --ignore-errors empty --ignore-errors mismatch
+    - name: Publish to coveralls.io
+      uses: coverallsapp/github-action@v2.3.7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
